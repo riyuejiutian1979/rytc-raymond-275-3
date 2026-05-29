@@ -21,6 +21,7 @@
         .warning-text { color: #ffaa66; font-size: 12px; margin-top: 4px; }
         .balance-row { display: flex; justify-content: space-between; background: #0f1622; border-radius: 20px; padding: 8px 12px; margin: 8px 0; font-size: 14px; }
         .refresh-btn { background: #2f4b8f; padding: 4px 12px; font-size: 12px; margin-left: 10px; cursor: pointer; }
+        .param-info { background: #0f1622; border-radius: 16px; padding: 8px; margin: 8px 0; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -38,14 +39,20 @@
             <!-- IDO 管理 -->
             <div class="card"><h2>📊 IDO 合约</h2><div>地址: <span id="idoAddr"></span></div><div class="balance-row"><span>💰 合约余额:</span><span id="idoBalance">-</span><button class="refresh-btn" data-type="ido">刷新</button></div><hr><div>开始时间戳: <input type="number" id="idoStart"></div><div>结束时间戳: <input type="number" id="idoEnd"></div><button id="setTimeBtn">修改时间</button><hr><div>比例 (1 USDT = ? RYTC): <input type="number" id="idoRate"></div><button id="setRateBtn">修改比例</button><hr><div>存入 RYTC: <input type="number" id="idoDepositAmount"></div><button id="idoDepositBtn">存入</button><hr><button id="idoWithdrawBtn">提取剩余</button></div>
             
-            <!-- 挖矿管理（增强：比例修改 + 提取） -->
+            <!-- 挖矿管理（增强：单独修改释放比例） -->
             <div class="card"><h2>⛏️ 挖矿合约</h2><div>地址: <span id="miningAddr"></span></div><div class="balance-row"><span>💰 合约余额:</span><span id="miningBalance">-</span><button class="refresh-btn" data-type="mining">刷新</button></div><hr>
-                <div><strong>⚙️ 矿机参数修改</strong></div>
+                <div><strong>📌 矿机类型说明：</strong> ID0=7天, ID1=30天, ID2=90天, ID3=180天, ID4=360天, ID5=725天, ID6=2075天</div>
                 <div>矿机类型ID: <input type="number" id="minerTypeId" placeholder="0~6" value="0"></div>
+                <button id="queryMinerBtn">查询当前矿机参数</button>
+                <div id="minerParamsDisplay" class="param-info" style="display:none;"></div>
+                <hr>
+                <div><strong>⚙️ 修改矿机状态（启用/禁用）</strong></div>
                 <div>启用/禁用: <select id="minerEnabled"><option value="true">启用</option><option value="false">禁用</option></select></div>
-                <button id="updateMinerStatusBtn">修改状态（仅启用/禁用）</button>
-                <div style="margin-top:10px;">释放比例 (基点, 150% = 15000): <input type="number" id="totalRatio" placeholder="总释放比例 (基点)"></div>
-                <button id="updateMinerRatioBtn">修改释放比例（其他参数不变）</button>
+                <button id="updateMinerStatusBtn">修改状态</button>
+                <hr>
+                <div><strong>📈 修改释放比例（单独修改）</strong></div>
+                <div>新释放比例 (基点, 150% = 15000): <input type="number" id="totalRatio" placeholder="总释放比例 (基点)"></div>
+                <button id="updateMinerRatioBtn">修改比例</button>
                 <hr>
                 <div>每日领取上限: <input type="number" id="maxClaimTimes"></div><button id="setMaxClaimBtn">修改</button>
                 <hr>
@@ -55,13 +62,13 @@
                 <div>提取到地址: <input type="text" id="miningWithdrawTo" placeholder="接收地址 (0x...)"></div>
                 <div>提取数量 (RYTC): <input type="number" id="miningWithdrawAmount" step="any" placeholder="数量"></div>
                 <button id="withdrawMiningBtn">提取</button>
-                <div class="warning-text">⚠️ 需要挖矿合约已实现 withdrawRewardTokens 函数，否则会失败</div>
+                <div class="warning-text">⚠️ 需要挖矿合约已实现 withdrawRewardTokens 函数</div>
             </div>
             
             <!-- 团队管理（含提现） -->
             <div class="card"><h2>👥 团队合约</h2><div>地址: <span id="teamAddr"></span></div><div class="balance-row"><span>💰 合约余额:</span><span id="teamBalance">-</span><button class="refresh-btn" data-type="team">刷新</button></div><hr><div>级别 (T1~T7): <select id="levelIndex"><option value="1">T1</option><option value="2">T2</option><option value="3">T3</option><option value="4">T4</option><option value="5">T5</option><option value="6">T6</option><option value="7">T7</option></select></div><div>奖励比例 (基点): <input type="number" id="newRate" placeholder="1000=10%"></div><button id="setLevelRateBtn">修改比例</button><hr><div>转入奖励池: <input type="number" id="teamFundAmount" placeholder="数量 (RYTC)"></div><button id="fundTeamBtn">转入</button><hr><div><strong>💰 提取奖励池（仅管理员）</strong></div><div>提取到地址: <input type="text" id="withdrawTo" placeholder="接收地址 (0x...)"></div><div>提取数量 (RYTC): <input type="number" id="withdrawAmount" step="any" placeholder="数量"></div><button id="withdrawTeamBtn">提取</button><div class="warning-text">⚠️ 提取后无法撤销，请确保不超过合约余额</div></div>
             
-            <!-- 公会管理（增加提取功能） -->
+            <!-- 公会管理（增加提取） -->
             <div class="card"><h2>🏛️ 公会合约</h2><div>地址: <span id="guildAddr"></span></div><div class="balance-row"><span>💰 合约余额:</span><span id="guildBalance">-</span><button class="refresh-btn" data-type="guild">刷新</button></div><hr><div>公会 ID (1-200): <input type="number" id="guildId" placeholder="公会ID"></div>
                 <div>设置会长: <input type="text" id="newOwner" placeholder="新会长地址"></div><button id="changeGuildOwnerBtn">更换会长</button><hr>
                 <div>设置质押总额 (RYTC): <input type="number" id="guildStake" placeholder="质押额"></div><button id="setGuildStakeBtn">设置质押额</button><hr>
@@ -73,7 +80,7 @@
                 <div>提取到地址: <input type="text" id="guildWithdrawTo" placeholder="接收地址 (0x...)"></div>
                 <div>提取数量 (RYTC): <input type="number" id="guildWithdrawAmount" step="any" placeholder="数量"></div>
                 <button id="withdrawGuildBtn">提取</button>
-                <div class="warning-text">⚠️ 需要公会合约已实现 withdrawRewardTokens 函数，否则会失败</div>
+                <div class="warning-text">⚠️ 需要公会合约已实现 withdrawRewardTokens 函数</div>
             </div>
         </div>
     </div>
@@ -88,14 +95,13 @@
     const TOKEN_ABI = ["function balanceOf(address) view returns (uint256)","function transfer(address,uint256) returns (bool)","function decimals() view returns (uint8)","function approve(address,uint256) returns (bool)"];
     const IDO_ABI = ["function owner() view returns (address)","function setTime(uint256,uint256)","function setRate(uint256)","function depositTokens(uint256)","function withdrawRemainingTokens()"];
     const MINING_ABI = ["function owner() view returns (address)","function updateMinerType(uint256,uint32,uint256,uint256,uint256,uint256,uint256,bool)","function setMaxDailyClaimTimes(uint256)","function minerTypes(uint256) view returns (uint32,uint256,uint256,uint256,uint256,uint256,uint256,bool)"];
-    // 扩展挖矿合约 ABI 增加提现函数（需合约实际实现）
     const MINING_ABI_WITHDRAW = ["function withdrawRewardTokens(address,uint256)"];
     const TEAM_ABI = ["function owner() view returns (address)","function setLevelRewardRate(uint256,uint256)","function depositRewardTokens(uint256)","function withdrawRewardTokens(address,uint256)"];
     const GUILD_ABI = ["function owner() view returns (address)","function setGuildStake(uint256,uint256)","function changeGuildOwner(uint256,address)","function setGuildActive(uint256,bool)","function setDividendRate(uint256)","function depositRewardTokens(uint256)"];
-    // 公会扩展提现函数
     const GUILD_ABI_WITHDRAW = ["function withdrawRewardTokens(address,uint256)"];
 
     let provider, signer, userAddress, tokenContract, idoContract, miningContract, teamContract, guildContract;
+    let miningWithdraw, guildWithdraw;
     
     async function refreshBalance(contractType) {
         if (!tokenContract) return;
@@ -117,6 +123,36 @@
         await refreshBalance('guild');
     }
 
+    // 查询矿机参数并显示
+    async function queryMinerParams() {
+        let typeId = parseInt(document.getElementById('minerTypeId').value);
+        if (isNaN(typeId) || typeId < 0 || typeId > 6) {
+            alert('矿机类型ID需为0-6');
+            return;
+        }
+        try {
+            const mt = await miningContract.minerTypes(typeId);
+            const days = mt[0];
+            const minStake = ethers.utils.formatEther(mt[1]);
+            const maxStake = mt[2].eq(0) ? '∞' : ethers.utils.formatEther(mt[2]);
+            const ratio = mt[3].toNumber() / 100;
+            const limitPerUser = mt[4].eq(0) ? '不限' : mt[4].toString();
+            const totalQty = mt[5].eq(0) ? '不限' : mt[5].toString();
+            const enabled = mt[7] ? '启用' : '禁用';
+            document.getElementById('minerParamsDisplay').innerHTML = `
+                <div>📅 天数: ${days}天</div>
+                <div>💰 门槛: ${minStake} - ${maxStake} RYTC</div>
+                <div>📈 当前释放比例: ${ratio}% (基点: ${mt[3].toNumber()})</div>
+                <div>👥 每人限购: ${limitPerUser}</div>
+                <div>🔢 总数量限制: ${totalQty}</div>
+                <div>⚙️ 状态: ${enabled}</div>
+            `;
+            document.getElementById('minerParamsDisplay').style.display = 'block';
+        } catch(e) {
+            alert('查询失败: ' + e.message);
+        }
+    }
+
     document.getElementById('connectBtn').onclick = async ()=>{
         if(!window.ethereum) return alert('安装MetaMask');
         await window.ethereum.request({method:'eth_requestAccounts'});
@@ -128,9 +164,8 @@
         miningContract = new ethers.Contract(CONFIG.mining, MINING_ABI, signer);
         teamContract = new ethers.Contract(CONFIG.team, TEAM_ABI, signer);
         guildContract = new ethers.Contract(CONFIG.guild, GUILD_ABI, signer);
-        // 为挖矿和公会扩展提现功能（使用独立合约实例）
-        window.miningWithdraw = new ethers.Contract(CONFIG.mining, MINING_ABI_WITHDRAW, signer);
-        window.guildWithdraw = new ethers.Contract(CONFIG.guild, GUILD_ABI_WITHDRAW, signer);
+        miningWithdraw = new ethers.Contract(CONFIG.mining, MINING_ABI_WITHDRAW, signer);
+        guildWithdraw = new ethers.Contract(CONFIG.guild, GUILD_ABI_WITHDRAW, signer);
         
         let idoOwner = await idoContract.owner();
         if(idoOwner.toLowerCase() === userAddress.toLowerCase()){
@@ -150,6 +185,9 @@
             if (type) refreshBalance(type);
         });
     });
+
+    // 挖矿查询按钮
+    document.getElementById('queryMinerBtn').onclick = queryMinerParams;
 
     // 通用转账
     document.getElementById('doTransfer').onclick = async ()=>{
@@ -174,8 +212,9 @@
         let mt=await miningContract.minerTypes(id); 
         let tx=await miningContract.updateMinerType(id, mt[0], mt[1], mt[2], mt[3], mt[4], mt[5], enabled); 
         await tx.wait(); alert('状态修改成功'); 
+        await queryMinerParams();
     };
-    // 修改释放比例（其他参数不变）
+    // 修改释放比例（单独修改）
     document.getElementById('updateMinerRatioBtn').onclick = async ()=>{
         let typeId = parseInt(document.getElementById('minerTypeId').value);
         let newRatio = parseInt(document.getElementById('totalRatio').value);
@@ -186,6 +225,7 @@
             let tx = await miningContract.updateMinerType(typeId, mt[0], mt[1], mt[2], newRatio, mt[4], mt[5], mt[7]);
             await tx.wait();
             alert(`矿机类型 ${typeId} 释放比例修改为 ${newRatio/100}%`);
+            await queryMinerParams();
         } catch(err) { alert('修改失败: ' + err.message); }
     };
     document.getElementById('setMaxClaimBtn').onclick = async ()=>{ let max=parseInt(document.getElementById('maxClaimTimes').value); if(!max) return; let tx=await miningContract.setMaxDailyClaimTimes(max); await tx.wait(); alert('成功'); };
@@ -199,7 +239,7 @@
         let decimals = await tokenContract.decimals();
         let amountWei = ethers.utils.parseUnits(amount.toString(), decimals);
         try {
-            let tx = await window.miningWithdraw.withdrawRewardTokens(to, amountWei);
+            let tx = await miningWithdraw.withdrawRewardTokens(to, amountWei);
             await tx.wait();
             alert(`成功提取 ${amount} RYTC 到 ${to}`);
             refreshAllBalances();
@@ -242,7 +282,7 @@
         let decimals = await tokenContract.decimals();
         let amountWei = ethers.utils.parseUnits(amount.toString(), decimals);
         try {
-            let tx = await window.guildWithdraw.withdrawRewardTokens(to, amountWei);
+            let tx = await guildWithdraw.withdrawRewardTokens(to, amountWei);
             await tx.wait();
             alert(`成功提取 ${amount} RYTC 到 ${to}`);
             refreshAllBalances();
